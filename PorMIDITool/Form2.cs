@@ -69,7 +69,7 @@ namespace PorMIDITool
                     com.Close(); // To handle the exception, in case the port isn't found and then they try again...
                     bool portfound = false;
                     com.PortName = s;
-                    com.BaudRate = 38400;
+                    com.BaudRate = 9600;
                     try
                     {
                         //MessageBox.Show("try con " + com.PortName);
@@ -83,27 +83,28 @@ namespace PorMIDITool
                     {
                         if (com.IsOpen) // Port has been opened properly...
                         {
-                            //MessageBox.Show("opn " + com.PortName);
+                            MessageBox.Show("opn " + com.PortName);
                             com.ReadTimeout = 500; // 500 millisecond timeout...
-
                             try
                             {
                                 //MessageBox.Show("red " + com.PortName);
                                 com.ReadTimeout = 200;
                                 string comms = com.ReadLine();
-                                if (comms.Substring(0, 8) == "I'm PRT!") // We have found the arduino!
+                                MessageBox.Show("red " + com.PortName);
+                                if (comms.Equals("I'm PMT!")) // We have found the arduino!
                                 {
-                                    progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
-                                    label5.Text = "Порт найден!";
-                                    com.Write("I hear you!");
-                                    deviceCOM = com.PortName;
-                                    button1.Enabled = true;
+                                    MessageBox.Show("fnd " + com.PortName);
+                                    //progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
+                                    //label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт найден!"; });
+                                    //com.Write("I hear you!");
+                                    //deviceCOM = com.PortName;
+                                    //button1.Invoke((MethodInvoker)delegate { button1.Enabled = true; });
                                     return;
                                 }
                             }
-                            catch (Exception)
-                            {
-                                //MessageBox.Show("er red " + com.PortName);
+                            catch (Exception ex)
+                            { 
+                                MessageBox.Show("er red " + com.PortName+" "+ex.ToString());
                             }
                         }
                     }
