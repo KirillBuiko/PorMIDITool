@@ -38,6 +38,7 @@
             this.label4 = new System.Windows.Forms.Label();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.label5 = new System.Windows.Forms.Label();
+            this.button2 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // comboBox2
@@ -157,11 +158,21 @@
             this.label5.TabIndex = 10;
             this.label5.Text = "Поиск порта...";
             // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(234, 107);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(71, 20);
+            this.button2.TabIndex = 11;
+            this.button2.Text = "Повторить";
+            this.button2.UseVisualStyleBackColor = true;
+            // 
             // Form2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(317, 164);
+            this.Controls.Add(this.button2);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.label4);
@@ -199,5 +210,6 @@
         public System.Windows.Forms.Label label4;
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.Button button2;
     }
 }
