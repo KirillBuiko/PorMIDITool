@@ -12,6 +12,9 @@ namespace PorMIDITool
         public int deviceIDOut = 0;
         public int deviceIDIn = 0;
         public string deviceCOM = "";
+        bool portfound = false;
+        Thread thr;
+
 
         public Form2()
         {
@@ -36,7 +39,7 @@ namespace PorMIDITool
 
         private void Form2_FormClosing(object sender, FormClosingEventArgs e)
         {
-
+            thr.Abort();
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -56,18 +59,28 @@ namespace PorMIDITool
 
         private void Form2_Shown(object sender, EventArgs e)
         {
-            Thread thr = new Thread(t);
-            void t() {
+            
+            thr = new Thread(t);
+            void t()
+            {
+                button2.Enabled = false;
                 SerialPort com = new SerialPort();
-                progressBar1.Invoke((MethodInvoker)delegate{progressBar1.Maximum = SerialPort.GetPortNames().Length;});
+                com.DtrEnable = true;
+                progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Maximum = SerialPort.GetPortNames().Length*3; });
                 //MessageBox.Show(SerialPort.GetPortNames().Length.ToString());
                 int count = 0;
-                foreach (string s in SerialPort.GetPortNames())
+                
+                for (int i = SerialPort.GetPortNames().Length-1; i>0; i--) 
                 {
-                    progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = ++count; });
+                    string s = SerialPort.GetPortNames()[i];
+                    if (portfound)
+                    {
+                        progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
+                        return;
+                    }
+                    progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = count+=3; });
                     //MessageBox.Show(count.ToString());
                     com.Close(); // To handle the exception, in case the port isn't found and then they try again...
-                    bool portfound = false;
                     com.PortName = s;
                     com.BaudRate = 9600;
                     try
@@ -83,38 +96,38 @@ namespace PorMIDITool
                     {
                         if (com.IsOpen) // Port has been opened properly...
                         {
-                            MessageBox.Show("opn " + com.PortName);
-                            com.ReadTimeout = 500; // 500 millisecond timeout...
+                            //MessageBox.Show("opn " + com.PortName);
                             try
                             {
-                                //MessageBox.Show("red " + com.PortName);
-                                com.ReadTimeout = 200;
+                                com.ReadTimeout = 1000; com.ReadLine();
                                 string comms = com.ReadLine();
-                                MessageBox.Show("red " + com.PortName);
-                                if (comms.Equals("I'm PMT!")) // We have found the arduino!
+                                //MessageBox.Show("red " + com.PortName + " "+comms);
+                                if (comms.Substring(0,8).Equals("I'm PMT!")) // We have found the arduino!
                                 {
-                                    MessageBox.Show("fnd " + com.PortName);
-                                    //progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
-                                    //label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт найден!"; });
-                                    //com.Write("I hear you!");
-                                    //deviceCOM = com.PortName;
-                                    //button1.Invoke((MethodInvoker)delegate { button1.Enabled = true; });
+                                    //MessageBox.Show("fnd " + com.PortName);
+                                    progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
+                                    label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт найден!"; });
+                                    com.Write("I hear you!");
+                                    deviceCOM = com.PortName;
+                                    button1.Invoke((MethodInvoker)delegate { button1.Enabled = true; });
+                                    com.Close();
+                                    portfound = true;
                                     return;
                                 }
                             }
                             catch (Exception ex)
-                            { 
-                                MessageBox.Show("er red " + com.PortName+" "+ex.ToString());
+                            {
+                                //MessageBox.Show("er red " + com.PortName+" "+ex.ToString());
                             }
                         }
                     }
-                }
-                if (!com.IsOpen)
+                }com.Close();
+                if (!portfound)
                 {
                     label5.Invoke((MethodInvoker)delegate { Text = "Порт не найден!"; });
-                    MessageBox.Show("Порт не найден!\nПроверьте, подключено ли устроство и перезапустите программу", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-                    this.Invoke((MethodInvoker)delegate { Close(); });
+                    MessageBox.Show("Порт не найден!\nПроверьте, подключено ли устроство и повторите", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
                 }
+                button2.Enabled = true;
             }
             thr.Start();
         }
