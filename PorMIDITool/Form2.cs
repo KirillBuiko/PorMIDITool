@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.IO.Ports;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace PorMIDITool
 {
@@ -13,7 +13,7 @@ namespace PorMIDITool
         public int deviceIDIn = 0;
         public string deviceCOM = "";
         bool portfound = false;
-        Thread thr;
+        Task thr;
 
 
         public Form2()
@@ -22,14 +22,15 @@ namespace PorMIDITool
         }
         void t()
         {
-            button2.Enabled = false;
+            label5.Invoke((MethodInvoker)delegate { label5.Text = "Поиск порта..."; });
+            button2.Invoke((MethodInvoker)delegate { button2.Enabled = false; });
             SerialPort com = new SerialPort();
             com.DtrEnable = true;
             progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Maximum = SerialPort.GetPortNames().Length * 3; });
             //MessageBox.Show(SerialPort.GetPortNames().Length.ToString());
             int count = 0;
-
-            for (int i = SerialPort.GetPortNames().Length - 1; i > 0; i--)
+            portfound = false;
+            for (int i = SerialPort.GetPortNames().Length-1; i >= 0; i--)
             {
                 string s = SerialPort.GetPortNames()[i];
                 if (portfound)
@@ -37,7 +38,7 @@ namespace PorMIDITool
                     progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
                     return;
                 }
-                progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = count += 3; });
+                progressBar1.Invoke((MethodInvoker)delegate { count += 3; progressBar1.Value = count; });
                 //MessageBox.Show(count.ToString());
                 com.Close(); // To handle the exception, in case the port isn't found and then they try again...
                 com.PortName = s;
@@ -71,6 +72,7 @@ namespace PorMIDITool
                                 button1.Invoke((MethodInvoker)delegate { button1.Enabled = true; });
                                 com.Close();
                                 portfound = true;
+                                button2.Invoke((MethodInvoker)delegate { button2.Enabled = true; });
                                 return;
                             }
                         }
@@ -84,10 +86,11 @@ namespace PorMIDITool
             com.Close();
             if (!portfound)
             {
-                label5.Invoke((MethodInvoker)delegate { Text = "Порт не найден!"; });
+                label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт не найден!"; });
                 MessageBox.Show("Порт не найден!\nПроверьте, подключено ли устроство и повторите", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
             }
-            button2.Enabled = true;
+            button2.Invoke((MethodInvoker)delegate { button2.Enabled = true; });
+            return;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -97,7 +100,7 @@ namespace PorMIDITool
         }
         private void Form2_FormClosing(object sender, FormClosingEventArgs e)
         {
-            thr.Abort();
+
         }
 
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
@@ -117,7 +120,13 @@ namespace PorMIDITool
 
         private void Form2_Shown(object sender, EventArgs e)
         {
-            thr = new Thread(t);
+            thr = new Task(t);
+            thr.Start();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            thr = new Task(t);
             thr.Start();
         }
     }

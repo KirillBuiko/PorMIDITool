@@ -166,6 +166,7 @@
             this.button2.TabIndex = 11;
             this.button2.Text = "Повторить";
             this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
             // Form2
             // 

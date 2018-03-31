@@ -260,25 +260,34 @@ namespace PorMIDITool
                     midiout.Close();
                 }
                 catch (NullReferenceException) { }
-                midiin = new MidiIn(f2.deviceIDIn);
-                midiout = new MidiOut(f2.deviceIDOut);
+                try
+                {
+                    midiin = new MidiIn(f2.deviceIDIn);
+                    midiin.MessageReceived += Midiin_MessageReceived;
+                    midiin.Start();
+                }
+                catch (Exception) { MessageBox.Show("Устройство на вход не было открыто. Попробуйте изменить настройки"); }
+                midiin.Close();
+                try
+                {
+                    midiout = new MidiOut(f2.deviceIDOut);
+                }
+                catch (Exception) { MessageBox.Show("Устройство на выход не было открыто. Попробуйте изменить настройки"); }
                 channel = f2.channel;
-                midiin.MessageReceived += Midiin_MessageReceived;
-                midiin.Start();
             }
             else Close();
         }
         void button_MouseDown(object s, MouseEventArgs args)
         {
             int tag = Convert.ToInt32((s as Button).Tag);
-            richTextBox1.Text = DateTime.Now.ToString().Substring(11, 8) + ", " + Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text) + " Note On, " + "127" + '\n' + richTextBox1.Text;
+            richTextBox1.Text = DateTime.Now.ToString().Substring(11, DateTime.Now.ToString().Length-11) + ", " + Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text) + " Note On, " + "127" + '\n' + richTextBox1.Text;
             richTextBox1.SelectionStart = richTextBox1.Text.Length;
             midi_Send(s, args, "9", 127);
         }
         void button_MouseUp(object s, MouseEventArgs args)
         {
             int tag = Convert.ToInt32((s as Button).Tag);
-            richTextBox1.Text = DateTime.Now.ToString().Substring(11, 8) + ", " + Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text) + " Note Off, " + "127" + '\n' + richTextBox1.Text;
+            richTextBox1.Text = DateTime.Now.ToString().Substring(11, DateTime.Now.ToString().Length - 11) + ", " + Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text) + " Note Off, " + "127" + '\n' + richTextBox1.Text;
             midi_Send(s, args, "8", 127);
         }
         void midi_Send(object s, EventArgs args, string type, int velocity)
