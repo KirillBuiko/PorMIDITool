@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace PorMIDITool
 {
-    public partial class Form2 : Form
+    public partial class FormSettings : Form
     {
         public bool open=false;
         public int channel = 0;
@@ -16,7 +16,7 @@ namespace PorMIDITool
         Task thr;
 
 
-        public Form2()
+        public FormSettings()
         {
             InitializeComponent();
         }
@@ -42,7 +42,7 @@ namespace PorMIDITool
                 //MessageBox.Show(count.ToString());
                 com.Close(); // To handle the exception, in case the port isn't found and then they try again...
                 com.PortName = s;
-                com.BaudRate = 9600;
+                com.BaudRate = 38400;
                 try
                 {
                     //MessageBox.Show("try con " + com.PortName);
@@ -67,7 +67,6 @@ namespace PorMIDITool
                                 //MessageBox.Show("fnd " + com.PortName);
                                 progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
                                 label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт найден!"; });
-                                com.Write("I hear you!");
                                 deviceCOM = com.PortName;
                                 button1.Invoke((MethodInvoker)delegate { button1.Enabled = true; });
                                 com.Close();
@@ -87,7 +86,7 @@ namespace PorMIDITool
             if (!portfound)
             {
                 label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт не найден!"; });
-                MessageBox.Show("Порт не найден!\nПроверьте, подключено ли устроство и повторите", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                MessageBox.Show("Порт не найден!\nПроверьте, подключено ли устройство и повторите", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
             }
             button2.Invoke((MethodInvoker)delegate { button2.Enabled = true; });
             return;
@@ -128,6 +127,11 @@ namespace PorMIDITool
         {
             thr = new Task(t);
             thr.Start();
+        }
+
+        private void Form2_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -1,14 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
+using System.IO.Ports;
 using NAudio.Midi;
 
 namespace PorMIDITool
@@ -23,13 +20,21 @@ namespace PorMIDITool
         public MidiIn midiin;
         int channel = 0;
         int k = 0;
+        int modulesCounter = 0;
         int octave;
         int profile;
+        SerialPort com;
         GroupBox gb;
-        Form2 f2;
+        FormSettings f2;
+        ChooseModule cm;
         FileStream profiles;
         FileStream conf;
+        Thread SerialTask;
+        ColorDialog MyDialog;
+        FormC[] modules;
+
         byte[] by; string[] profstr; object sd; TextBox[,] tb; TextBox[,] addptb;
+
         void tb_Press(object s, KeyPressEventArgs args)
         {
             if ((char.IsDigit(args.KeyChar)) || args.KeyChar == 8)
@@ -42,6 +47,13 @@ namespace PorMIDITool
                 return;
             }
             else args.Handled = true;
+        }
+        void repair(string channel)
+        {
+            MessageBox.Show("Проблема с открытием профиля.\nОн будет восстановлен.", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+            profiles.Close();
+            File.WriteAllText("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + channel + ".pmt", "-1 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 20 21 22 23 24 25 26 27 28 29");
+            profstr = new string[] { "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29" };
         }
         void prof_Click(object s, EventArgs args)
         {
@@ -61,10 +73,7 @@ namespace PorMIDITool
             }
             catch (Exception)
             {
-                MessageBox.Show("Проблема с открытием профиля.\nОн будет восстановлен.", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-                profiles.Close();
-                File.WriteAllText("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile.ToString() + ".pmt", "-1 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7 8 9");
-                profstr = new string[] { "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+                repair(profile.ToString());
             }
             octave = Convert.ToInt32(profstr[0]);
             (sd as RadioButton).Text = (octave).ToString();
@@ -90,7 +99,17 @@ namespace PorMIDITool
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            modules = new FormC[6];
+            for (int i = 0; i < 6; i++)
+            {
+                modules[i] = new FormC();
+            }
+            ToolTip t = new ToolTip();t.SetToolTip(addmodb3, "Добавить подключённый модуль"); t.SetToolTip(colorb, "Выбрать цвет подсветки");
+            MyDialog = new ColorDialog();
+            MyDialog.AllowFullOpen = true;
+            MyDialog.ShowHelp = true;
+            SerialTask = new Thread(SerialTaskR);
+            com = new SerialPort(); com.DtrEnable = true;
             Directory.CreateDirectory("c:\\ProgramData\\PorMIDITool\\profiles");
             conf = new FileStream("c:\\ProgramData\\PorMIDITool\\conf.pmt", FileMode.OpenOrCreate, FileAccess.ReadWrite);
             by = new byte[conf.Length]; conf.Read(by, 0, by.Length); conf.Close();
@@ -114,10 +133,7 @@ namespace PorMIDITool
             }
             catch (Exception)
             {
-                MessageBox.Show("Проблема с открытием профиля.\nОн будет восстановлен.", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
-                profiles.Close();
-                File.WriteAllText("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + fstr + ".pmt", "-1 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7 8 9");
-                profstr = new string[] { "-1", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+                repair(fstr);
             }
             octave = Convert.ToInt32(profstr[0]);
             профильToolStripMenuItem.Text = "Профиль (" + profile.ToString() + ")";
@@ -230,7 +246,8 @@ namespace PorMIDITool
 
         private void Form1_Shown(object sender, EventArgs e)
         {
-            f2 = new Form2();
+            f2 = new FormSettings();
+            cm = new ChooseModule();
             int k = 0;
             k = MidiOut.NumberOfDevices;
             for (int i = 0; i < k; i++)
@@ -247,10 +264,12 @@ namespace PorMIDITool
             if (k > 0) f2.comboBox3.SelectedIndex = 0;
             f2.comboBox2.SelectedIndex = 0;
             f2.StartPosition = FormStartPosition.CenterParent;
-            f2.FormClosing += Open;
+            //f2.FormClosing += SettingsClose;
             f2.ShowDialog();
+            cm.StartPosition = FormStartPosition.CenterScreen;
+            cm.FormClosing += ChooseModuleClose;
         }
-        public void Open(object sender, FormClosingEventArgs e)
+        public void SettingsClose(object sender, FormClosingEventArgs e)
         {
             if (f2.open == true)
             {
@@ -267,39 +286,134 @@ namespace PorMIDITool
                     midiin.Start();
                 }
                 catch (Exception) { MessageBox.Show("Устройство на вход не было открыто. Попробуйте изменить настройки"); }
-                midiin.Close();
                 try
                 {
                     midiout = new MidiOut(f2.deviceIDOut);
                 }
+
                 catch (Exception) { MessageBox.Show("Устройство на выход не было открыто. Попробуйте изменить настройки"); }
+                try
+                {
+                    com.Close();
+                }
+                catch (Exception) { }
+                try
+                {
+                    com.BaudRate = 9600;
+                    com.PortName = f2.deviceCOM;
+                    com.Open();
+                    Thread.Sleep(2000);
+                    com.Write("I hear you!");
+                    SerialTask.Start();
+                }
+                catch (Exception ex) { MessageBox.Show(ex.HelpLink); }
                 channel = f2.channel;
             }
             else Close();
         }
+        public void ChooseModuleClose(object sender, FormClosingEventArgs e)
+        {
+
+            if (cm.open == true)
+            {
+                for (int i = 0; i < modules.Length; i++)
+                {
+                    if (modules[i].Text == "")
+                    {
+                        modulesCounter++;
+                        modules[i] = new FormC();
+                        modules[i] = Func.Constructor(cm.Text, modules[i]);
+                        modules[i].FormClosing += ModuleClose;
+                        modules[i].Show();modules[i].Left = this.Left;modules[i].Top = this.Top + 481;
+                        break;
+                    }
+                }
+            }
+
+        }
+        public void ModuleClose(object sender, FormClosingEventArgs e) { modulesCounter--; (sender as Form).Text = ""; }
+
+        void SerialTaskR()
+        {
+            while (true) try
+                {
+                    if (com.IsOpen)
+                    {
+                        string[] rbuf;
+                        if (com.ReadBufferSize > 0)
+                        {
+                            rbuf = com.ReadLine().Split(new char[] { ' ' });
+                            int note = 0;
+                            if (rbuf[0] == "A1")
+                            {
+                                if (rbuf[1] == "b") note = Convert.ToInt32(this.Controls["tb" + rbuf[2]].Text);
+                                if (rbuf[1] == "cc") note = Convert.ToInt32(Controls["addtb" + rbuf[2]].Text);
+                            }
+                            else
+                            {
+                                bool flag = false;
+                                foreach (FormC form in modules)
+                                {
+                                    if (rbuf[0] == form.Text)
+                                    {
+                                        note = Convert.ToInt32(form.Controls.Find(rbuf[2], false)[0].Text); flag = true; break;
+                                    }
+                                }
+                                if (!flag) break;
+                            }
+
+                            {
+                                if (rbuf[1] == "b")
+                                {
+                                    //MessageBox.Show(rbuf[2].ToCharArray()[2].ToString());
+                                    if (rbuf[3] == ("on" + '\r'))
+                                    {
+                                        midi_Send(note, "9", 127);
+                                    }
+                                    else midi_Send(note, "8", 127);
+                                }
+                                if (rbuf[1] == "cc")
+                                {
+                                    midi_Send(note, "B", Convert.ToInt32(rbuf[2].Substring(0, rbuf[4].Length - 1)));
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
         void button_MouseDown(object s, MouseEventArgs args)
         {
             int tag = Convert.ToInt32((s as Button).Tag);
-            richTextBox1.Text = DateTime.Now.ToString().Substring(11, DateTime.Now.ToString().Length-11) + ", " + Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text) + " Note On, " + "127" + '\n' + richTextBox1.Text;
-            richTextBox1.SelectionStart = richTextBox1.Text.Length;
-            midi_Send(s, args, "9", 127);
+            int note = Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text);
+            midi_Send(note, "9", 127);
         }
         void button_MouseUp(object s, MouseEventArgs args)
         {
             int tag = Convert.ToInt32((s as Button).Tag);
-            richTextBox1.Text = DateTime.Now.ToString().Substring(11, DateTime.Now.ToString().Length - 11) + ", " + Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text) + " Note Off, " + "127" + '\n' + richTextBox1.Text;
-            midi_Send(s, args, "8", 127);
-        }
-        void midi_Send(object s, EventArgs args, string type, int velocity)
-        {
-            int tag = Convert.ToInt32((s as Button).Tag);
             int note = Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text);
+            midi_Send(note, "8", 127);
+        }
+        void midi_Send(int note, string type, int velocity)
+        {
             String strnote;
             if (note < 16) strnote = "0" + note.ToString("X");
             else strnote = note.ToString("X");
             String vel = velocity.ToString("X");
             String channel = this.channel.ToString("X");
             midiout.Send(Convert.ToInt32(vel + strnote + type + channel, 16));
+            switch (type)
+            {
+                case "8":
+                    richTextBox1.Invoke((MethodInvoker)delegate { richTextBox1.Text = DateTime.Now.ToString().Substring(11, DateTime.Now.ToString().Length - 11) + ", " + note + " Note Off, " + velocity + '\n' + richTextBox1.Text; });
+                    break;
+                case "9":
+                    richTextBox1.Invoke((MethodInvoker)delegate { richTextBox1.Text = DateTime.Now.ToString().Substring(11, DateTime.Now.ToString().Length - 11) + ", " + note + " Note On, " + velocity + '\n' + richTextBox1.Text; });
+                    break;
+                    /*case "B":
+                        richTextBox1.Invoke((MethodInvoker)delegate { richTextBox1.Text = DateTime.Now.ToString().Substring(11, DateTime.Now.ToString().Length - 11) + ", " + note + " CC, " + velocity + '\n' + richTextBox1.Text; });
+                        break;*/
+            }
         }
 
         private void Midiin_MessageReceived(object sender, MidiInMessageEventArgs e)
@@ -308,12 +422,12 @@ namespace PorMIDITool
             if (midimes != "") type = midimes.Substring(midimes.Length - 2);
             while (midimes.Length < 6) midimes.Insert(0, "0");
             note = Convert.ToInt32(midimes.Substring(midimes.Length - 4, 2), 16);
-            velocity = note = Convert.ToInt32(midimes.Substring(midimes.Length - 6, 2), 16);
-            if (type.Equals("80"))
+            velocity = note = Convert.ToInt32(midimes.Substring(midimes.Length - 6, 1), 16);
+            if (type.Equals("8"))
                 this.Invoke(new EventHandler(delegate { richTextBox2.Text = DateTime.Now.ToString().Substring(11, 8) + ", " + note.ToString() + " Note Off, " + velocity.ToString() + '\n' + richTextBox2.Text; }));
-            if (type.Equals("90"))
+            if (type.Equals("9"))
                 this.Invoke(new EventHandler(delegate { richTextBox2.Text = DateTime.Now.ToString().Substring(11, 8) + ", " + note.ToString() + " Note On, " + velocity.ToString() + '\n' + richTextBox2.Text; }));
-            if (type.Equals("B0"))//MessageBox.Show(midimes,"",MessageBoxButtons.OK,MessageBoxIcon.Asterisk);
+            if (type.Equals("B"))//MessageBox.Show(midimes,"",MessageBoxButtons.OK,MessageBoxIcon.Asterisk);
                 this.Invoke(new EventHandler(delegate { richTextBox2.Text = DateTime.Now.ToString().Substring(11, 8) + ", CC " + note.ToString() + ", " + velocity.ToString() + '\n' + richTextBox2.Text; }));
 
             //midiout.Send(e.RawMessage);
@@ -325,8 +439,10 @@ namespace PorMIDITool
             {
                 midiout.Dispose();
                 midiin.Dispose();
+                com.Close();
+                SerialTask.Abort();
             }
-            catch (NullReferenceException) { }
+            catch (Exception) { }
         }
 
         private void настройкиToolStripMenuItem_Click(object sender, EventArgs e)
@@ -373,6 +489,140 @@ namespace PorMIDITool
                 this.Controls["tb" + (i + 1).ToString()].Text = ((Convert.ToInt32((s as RadioButton).Text) + 1) * 12 + i).ToString();
                 if ((Convert.ToInt32((s as RadioButton).Text) + 1) * 12 + i > 127) this.Controls["tb" + (i + 1).ToString()].Text = "127";
             }
+        }
+
+        private void загрузитьВКонтроллерToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void colorb_Click(object sender, EventArgs e)
+        {
+            Form colorc = new Form();
+            colorc.Icon = this.Icon;
+            colorc.Text = "Определение цветов";
+            Button[,] b = new Button[4, 4];
+            ////////////////////////////////////k=15////////////////////////
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    b[j, i] = new Button();
+                    b[j, i].Name = "colorb" + (i * 4 + j).ToString();
+                    b[j, i].Size = new System.Drawing.Size(100, 70);
+                    b[j, i].Text = (i*4+j+1).ToString();
+                    b[j, i].Location = new Point(j * 105 + 30, i * 75 + 30);
+                    colorc.Controls.Add(b[j, i]);
+                }
+            }
+            string[] colorsNames = { "Красный", "Зелёный", "Синий","Жёлтый","Голубой","Сереневый","Белый"};
+            Color[] colors = { Color.FromArgb(252, 38, 70)/*Red*/, Color.FromArgb(112,186,60)/*Green*/, Color.FromArgb(65, 105, 225)/*Blue*/, Color.FromArgb(225, 204, 79)/*Yellow*/, Color.FromArgb(92, 154, 204)/*Strange Blue*/, Color.FromArgb(153, 102, 204)/*Purple*/, Color.FromArgb(245, 245, 245)/*White*/  };
+            ComboBox[,] cb = new ComboBox[4, 4];
+            ////////////////////////////////////k=15////////////////////////
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    cb[j, i] = new ComboBox();
+                    cb[j, i].Name = "colorcb" + (i * 4 + j).ToString();
+                    cb[j, i].Size = new System.Drawing.Size(100, 20);
+                    cb[j, i].Location = new Point(j * 105 + 30, i * 75 + 30);
+                    cb[j, i].Items.AddRange(colorsNames);
+                    cb[j, i].DrawItem += cb_DrawItem;
+                    cb[j, i].DrawMode = DrawMode.OwnerDrawFixed;
+                    
+                    colorc.Controls.Add(cb[j, i]);cb[j, i].BringToFront();
+                }
+            }
+            string[] typesNames = {"Включён всегда","Включён при нажатие","Включён при нажатие"};
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    cb[j, i] = new ComboBox();
+                    cb[j, i].Name = "colorcb" + (i * 4 + j).ToString();
+                    cb[j, i].Size = new System.Drawing.Size(100, 20);
+                    cb[j, i].Location = new Point(j * 105 + 30, i * 75 + 80);
+                    cb[j, i].Items.AddRange(colorsNames);
+                    cb[j, i].DrawItem += cb_DrawItem;
+                    cb[j, i].DrawMode = DrawMode.OwnerDrawFixed;
+
+                    colorc.Controls.Add(cb[j, i]); cb[j, i].BringToFront();
+                }
+            }
+            void cb_DrawItem(object s, DrawItemEventArgs f)
+            {
+                using (Brush br = new SolidBrush(colors[f.Index]))
+                {
+                    f.Graphics.FillRectangle(br, f.Bounds);
+                }
+            }
+            colorc.ShowDialog();
+        }
+
+        private void addmodb2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void addmodb3_Click(object sender, EventArgs e)
+        {
+            if (modulesCounter < 6)
+            {
+                cm.ShowDialog();
+            }
+            else MessageBox.Show("Одновременно открытыми могут быть только 6 модулей", "Отказ", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+        }
+
+        private void загрузитьВМодульToolStripMenuItem_MouseEnter(object sender, EventArgs e)
+        {
+            загрузитьВМодульToolStripMenuItem.DropDownItems.Clear();
+            foreach (FormC form in modules)
+            {
+                if (form.Text != "")
+                {
+                    ToolStripMenuItem tsi = new ToolStripMenuItem();
+                    tsi.Text = "На " + form.Text;
+                    tsi.Click += moduleSaveClick;
+                    загрузитьВМодульToolStripMenuItem.DropDownItems.Add(tsi);
+                }
+            }
+        }
+        private void moduleSaveClick(object sender, EventArgs e)
+        {
+            if (com.IsOpen)
+                foreach (FormC form in modules)
+                {
+                    if (form.Text == (sender as ToolStripMenuItem).Text)
+                    {
+                        com.Write("write_midiinfo" + form.Text);String message = "";
+                        foreach (Control ctrl in form.Controls)
+                        {
+                            message=message+ctrl.Name+"&"+ctrl.Text+"_";
+                        }com.Write(message);
+                    }
+                }
+        }
+
+        private void загрузитьВКонтроллерToolStripMenuItem_Click_1(object sender, EventArgs e)
+        {
+            if (com.IsOpen)
+            {
+                com.Write("write_midiinfoA1");String message="";
+                for (int i = 0; i < 16; i++)
+                {
+                    message = message + this.Controls["tb" + (i + 1).ToString()].Text+"_";
+                }
+                for (int i = 0; i < 10; i++)
+                {
+                    message = message + this.Controls["addtb" + (i + 1).ToString()].Text + "_";
+                }com.Write(message);
+            }
+        }
+
+        private void загрузитьВМодульToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

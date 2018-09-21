@@ -1,4 +1,5 @@
-﻿namespace PorMIDITool
+﻿using System;
+namespace PorMIDITool
 {
     partial class Form1
     {
@@ -17,7 +18,11 @@
             {
                 components.Dispose();
             }
-            base.Dispose(disposing);
+            try
+            {
+                base.Dispose(disposing);
+            }
+            catch (Exception) { }
         }
 
         #region Код, автоматически созданный конструктором форм Windows
@@ -28,19 +33,27 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
+            this.timerColor = new System.Windows.Forms.Timer(this.components);
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.октаваToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.поднятьНа1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.опуститьНа1ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.профильToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.загрузитьВКонтроллерToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.загрузитьВМодульToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.настройкиToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.richTextBox2 = new System.Windows.Forms.RichTextBox();
-            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.addmodb3 = new System.Windows.Forms.Button();
+            this.colorb = new System.Windows.Forms.Button();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -82,6 +95,10 @@
             this.label7.TabIndex = 6;
             this.label7.Text = " ";
             // 
+            // timerColor
+            // 
+            this.timerColor.Interval = 1000;
+            // 
             // menuStrip1
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -122,10 +139,37 @@
             // профильToolStripMenuItem
             // 
             this.профильToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.toolStripMenuItem1});
+            this.toolStripMenuItem1,
+            this.загрузитьВКонтроллерToolStripMenuItem,
+            this.загрузитьВМодульToolStripMenuItem});
             this.профильToolStripMenuItem.Name = "профильToolStripMenuItem";
             this.профильToolStripMenuItem.Size = new System.Drawing.Size(71, 20);
             this.профильToolStripMenuItem.Text = "Профиль";
+            // 
+            // toolStripMenuItem1
+            // 
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(248, 22);
+            this.toolStripMenuItem1.Text = "Сохранить";
+            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            // 
+            // загрузитьВКонтроллерToolStripMenuItem
+            // 
+            this.загрузитьВКонтроллерToolStripMenuItem.Name = "загрузитьВКонтроллерToolStripMenuItem";
+            this.загрузитьВКонтроллерToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.U)));
+            this.загрузитьВКонтроллерToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.загрузитьВКонтроллерToolStripMenuItem.Text = "Загрузить в контроллер";
+            this.загрузитьВКонтроллерToolStripMenuItem.ToolTipText = "Требуется для использования как MIDI устройства с теми же настройками";
+            this.загрузитьВКонтроллерToolStripMenuItem.Click += new System.EventHandler(this.загрузитьВКонтроллерToolStripMenuItem_Click_1);
+            // 
+            // загрузитьВМодульToolStripMenuItem
+            // 
+            this.загрузитьВМодульToolStripMenuItem.Name = "загрузитьВМодульToolStripMenuItem";
+            this.загрузитьВМодульToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.загрузитьВМодульToolStripMenuItem.Text = "Загрузить в модуль";
+            this.загрузитьВМодульToolStripMenuItem.Click += new System.EventHandler(this.загрузитьВМодульToolStripMenuItem_Click);
+            this.загрузитьВМодульToolStripMenuItem.MouseEnter += new System.EventHandler(this.загрузитьВМодульToolStripMenuItem_MouseEnter);
             // 
             // настройкиToolStripMenuItem
             // 
@@ -152,20 +196,37 @@
             this.richTextBox2.TabIndex = 9;
             this.richTextBox2.Text = "";
             // 
-            // toolStripMenuItem1
+            // addmodb3
             // 
-            this.toolStripMenuItem1.Name = "сохранитьToolStripMenuItem";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(180, 22);
-            this.toolStripMenuItem1.Text = "Сохранить";
-            this.toolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            this.addmodb3.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("addmodb3.BackgroundImage")));
+            this.addmodb3.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.addmodb3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.addmodb3.Location = new System.Drawing.Point(362, 412);
+            this.addmodb3.Name = "addmodb3";
+            this.addmodb3.Size = new System.Drawing.Size(69, 18);
+            this.addmodb3.TabIndex = 11;
+            this.addmodb3.UseVisualStyleBackColor = true;
+            this.addmodb3.Click += new System.EventHandler(this.addmodb3_Click);
+            // 
+            // colorb
+            // 
+            this.colorb.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.colorb.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.colorb.Location = new System.Drawing.Point(362, 27);
+            this.colorb.Name = "colorb";
+            this.colorb.Size = new System.Drawing.Size(53, 16);
+            this.colorb.TabIndex = 13;
+            this.colorb.UseVisualStyleBackColor = true;
+            this.colorb.Click += new System.EventHandler(this.colorb_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(717, 418);
+            this.ClientSize = new System.Drawing.Size(717, 442);
+            this.Controls.Add(this.colorb);
+            this.Controls.Add(this.addmodb3);
             this.Controls.Add(this.richTextBox2);
             this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.label7);
@@ -174,12 +235,13 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.menuStrip1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Form1";
+            this.Text = "PortableMIDITool";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.Shown += new System.EventHandler(this.Form1_Shown);
@@ -205,6 +267,12 @@
         private System.Windows.Forms.RichTextBox richTextBox1;
         private System.Windows.Forms.RichTextBox richTextBox2;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem загрузитьВКонтроллерToolStripMenuItem;
+        private System.Windows.Forms.Button addmodb3;
+        private System.Windows.Forms.Button colorb;
+        private System.Windows.Forms.Timer timerColor;
+        private System.Windows.Forms.ToolTip toolTip1;
+        private System.Windows.Forms.ToolStripMenuItem загрузитьВМодульToolStripMenuItem;
     }
 }
 
