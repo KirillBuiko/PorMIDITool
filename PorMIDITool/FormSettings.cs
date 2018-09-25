@@ -21,45 +21,48 @@ namespace PorMIDITool
             InitializeComponent();
         }
         void t()
-        {
-            label5.Invoke((MethodInvoker)delegate { label5.Text = "Поиск порта..."; });
-            button2.Invoke((MethodInvoker)delegate { button2.Enabled = false; });
-            SerialPort com = new SerialPort();
-            com.DtrEnable = true;
-            progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Maximum = SerialPort.GetPortNames().Length * 3; });
-            //MessageBox.Show(SerialPort.GetPortNames().Length.ToString());
-            int count = 0;
-            portfound = false;
-            for (int i = SerialPort.GetPortNames().Length-1; i >= 0; i--)
+        {   int count = 0;SerialPort com = new SerialPort();
+            try
             {
-                string s = SerialPort.GetPortNames()[i];
-                if (portfound)
-                {
-                    progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
-                    return;
-                }
-                progressBar1.Invoke((MethodInvoker)delegate { count += 3; progressBar1.Value = count; });
-                //MessageBox.Show(count.ToString());
-                com.Close(); // To handle the exception, in case the port isn't found and then they try again...
-                com.PortName = s;
-                com.BaudRate = 38400;
+                label5.Invoke((MethodInvoker)delegate { label5.Text = "Поиск порта..."; });
+                button2.Invoke((MethodInvoker)delegate { button2.Enabled = false; });
+                
+                com.DtrEnable = true;
+                progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Maximum = SerialPort.GetPortNames().Length * 3; });
+                //MessageBox.Show(SerialPort.GetPortNames().Length.ToString());
+                
+                portfound = false;
+            }
+            catch (Exception) { }
+            for (int i = SerialPort.GetPortNames().Length - 1; i >= 0; i--)
+            {
                 try
                 {
+                    string s = SerialPort.GetPortNames()[i];
+                    if (portfound)
+                    {
+                        progressBar1.Invoke((MethodInvoker)delegate { progressBar1.Value = progressBar1.Maximum; });
+                        return;
+                    }
+                    progressBar1.Invoke((MethodInvoker)delegate { count += 3; progressBar1.Value = count; });
+                    //MessageBox.Show(count.ToString());
+                    com.Close(); // To handle the exception, in case the port isn't found and then they try again...
+                    com.PortName = s;
+                    com.BaudRate = 38400;
+
                     //MessageBox.Show("try con " + com.PortName);
                     com.Open();
                 }
-                catch (Exception)
+                catch (Exception) { }
+
+                try
                 {
-                    //MessageBox.Show("er try con " + com.PortName);
-                }
-                if (!portfound)
-                {
-                    if (com.IsOpen) // Port has been opened properly...
+                    if (!portfound)
                     {
-                        //MessageBox.Show("opn " + com.PortName);
-                        try
+                        if (com.IsOpen) // Port has been opened properly...
                         {
-                            com.ReadTimeout = 1000; com.ReadLine();
+                            //MessageBox.Show("opn " + com.PortName);
+                            com.ReadTimeout = 2000; com.ReadLine();
                             string comms = com.ReadLine();
                             //MessageBox.Show("red " + com.PortName + " "+comms);
                             if (comms.Substring(0, 8).Equals("I'm PMT!")) // We have found the arduino!
@@ -69,28 +72,44 @@ namespace PorMIDITool
                                 label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт найден!"; });
                                 deviceCOM = com.PortName;
                                 button1.Invoke((MethodInvoker)delegate { button1.Enabled = true; });
-                                com.Close();
                                 portfound = true;
                                 button2.Invoke((MethodInvoker)delegate { button2.Enabled = true; });
+                                try
+                                {
+                                    com.Close();
+                                }
+                                catch (Exception ex) { MessageBox.Show(ex.ToString()); }
                                 return;
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            //MessageBox.Show("er red " + com.PortName+" "+ex.ToString());
-                        }
                     }
                 }
+                catch (Exception)
+                {
+                    //MessageBox.Show("er red " + com.PortName+" "+ex.ToString());
+                }
             }
-            com.Close();
-            if (!portfound)
+            try
             {
-                label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт не найден!"; });
-                MessageBox.Show("Порт не найден!\nПроверьте, подключено ли устройство и повторите", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+                com.Close();
             }
-            button2.Invoke((MethodInvoker)delegate { button2.Enabled = true; });
+            catch (Exception ex) { MessageBox.Show(ex.ToString()); }
+            try
+            {
+                if (!portfound)
+                {
+
+                    label5.Invoke((MethodInvoker)delegate { label5.Text = "Порт не найден!"; });
+                    MessageBox.Show("Порт не найден!\nПроверьте, подключено ли устройство и повторите", "", MessageBoxButtons.OK, MessageBoxIcon.Asterisk);
+
+                }
+                button2.Invoke((MethodInvoker)delegate { button2.Enabled = true; });
+            }
+            catch (Exception) { }
             return;
         }
+            
+        
 
         private void button1_Click(object sender, EventArgs e)
         {

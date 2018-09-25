@@ -52,9 +52,10 @@ namespace PorMIDITool
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.richTextBox2 = new System.Windows.Forms.RichTextBox();
             this.addmodb3 = new System.Windows.Forms.Button();
-            this.colorb = new System.Windows.Forms.Button();
+            this.colorb = new System.Windows.Forms.PictureBox();
             this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.colorb)).BeginInit();
             this.SuspendLayout();
             // 
             // label1
@@ -107,6 +108,7 @@ namespace PorMIDITool
             this.настройкиToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
+            this.menuStrip1.ShowItemToolTips = true;
             this.menuStrip1.Size = new System.Drawing.Size(717, 24);
             this.menuStrip1.TabIndex = 7;
             this.menuStrip1.Text = "menuStrip1";
@@ -150,25 +152,25 @@ namespace PorMIDITool
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
             this.toolStripMenuItem1.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(248, 22);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(244, 22);
             this.toolStripMenuItem1.Text = "Сохранить";
+            this.toolStripMenuItem1.ToolTipText = "Сохраняет данные в профиль";
             this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
             // 
             // загрузитьВКонтроллерToolStripMenuItem
             // 
             this.загрузитьВКонтроллерToolStripMenuItem.Name = "загрузитьВКонтроллерToolStripMenuItem";
             this.загрузитьВКонтроллерToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.U)));
-            this.загрузитьВКонтроллерToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
-            this.загрузитьВКонтроллерToolStripMenuItem.Text = "Загрузить в контроллер";
-            this.загрузитьВКонтроллерToolStripMenuItem.ToolTipText = "Требуется для использования как MIDI устройства с теми же настройками";
+            this.загрузитьВКонтроллерToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
+            this.загрузитьВКонтроллерToolStripMenuItem.Text = "Загрузить в устройство";
+            this.загрузитьВКонтроллерToolStripMenuItem.ToolTipText = "Требуется для использования в режиме MIDI устройства с теми же параметрами";
             this.загрузитьВКонтроллерToolStripMenuItem.Click += new System.EventHandler(this.загрузитьВКонтроллерToolStripMenuItem_Click_1);
             // 
             // загрузитьВМодульToolStripMenuItem
             // 
             this.загрузитьВМодульToolStripMenuItem.Name = "загрузитьВМодульToolStripMenuItem";
-            this.загрузитьВМодульToolStripMenuItem.Size = new System.Drawing.Size(248, 22);
+            this.загрузитьВМодульToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.загрузитьВМодульToolStripMenuItem.Text = "Загрузить в модуль";
-            this.загрузитьВМодульToolStripMenuItem.Click += new System.EventHandler(this.загрузитьВМодульToolStripMenuItem_Click);
             this.загрузитьВМодульToolStripMenuItem.MouseEnter += new System.EventHandler(this.загрузитьВМодульToolStripMenuItem_MouseEnter);
             // 
             // настройкиToolStripMenuItem
@@ -211,12 +213,13 @@ namespace PorMIDITool
             // colorb
             // 
             this.colorb.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.colorb.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.colorb.Image = ((System.Drawing.Image)(resources.GetObject("colorb.Image")));
             this.colorb.Location = new System.Drawing.Point(362, 27);
             this.colorb.Name = "colorb";
             this.colorb.Size = new System.Drawing.Size(53, 16);
+            this.colorb.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.colorb.TabIndex = 13;
-            this.colorb.UseVisualStyleBackColor = true;
+            this.colorb.TabStop = false;
             this.colorb.Click += new System.EventHandler(this.colorb_Click);
             // 
             // Form1
@@ -247,6 +250,7 @@ namespace PorMIDITool
             this.Shown += new System.EventHandler(this.Form1_Shown);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.colorb)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -269,7 +273,7 @@ namespace PorMIDITool
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
         private System.Windows.Forms.ToolStripMenuItem загрузитьВКонтроллерToolStripMenuItem;
         private System.Windows.Forms.Button addmodb3;
-        private System.Windows.Forms.Button colorb;
+        private System.Windows.Forms.PictureBox colorb;
         private System.Windows.Forms.Timer timerColor;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.ToolStripMenuItem загрузитьВМодульToolStripMenuItem;

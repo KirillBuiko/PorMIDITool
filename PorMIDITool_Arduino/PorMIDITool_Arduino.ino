@@ -1,11 +1,13 @@
 #include<EEPROM.h>
 int addpstatus[10] ={0,0,0,0,0,0,0,0,0,0};
 bool bstatus[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-String* midiMode_info = new String[30];
+int colors[7][3]={{0,1023,1023},{1023,0,1023},{1023,1023,0},{0,0,1023},{1023,0,0},{0,1023,0},{0,0,0}};
+int colorData[16][2]={{1,0},{0,1},{0,2},{1,3},{0,4},{0,5},{0,6},{0,0},{1,1},{0,2},{0,3},{0,4},{0,5},{0,6},{0,0},{0,0}};
+String* midiMode_info = new String[59];
 bool midiMode = true;
 #define pulse 8//SCL
 #define data 9//SDO
-#define savedatavol 30
+#define savedatavol 59
 
 bool GetBit()
 {
@@ -28,11 +30,11 @@ void midi_Send(String str, String byte1, int byte2) {
 
 void setup() {
   //Get midi_byte1_data from 50-27 EEPROM
-  for (int i = 50; i < 50 + savedatavol; i++) {
-    midiMode_info[i - 50] = EEPROM.read(i);
-  } analogWrite(A1, map(midiMode_info[26].toInt(), 0, 255, 0, 1023)); analogWrite(A2, map(midiMode_info[27].toInt(), 0, 255, 0, 1023)); analogWrite(A3, map(midiMode_info[28].toInt(), 0, 255, 0, 1023));
+  for (int i = 0; i < savedatavol; i++) {
+    midiMode_info[i] = EEPROM.read(i);
+  }
   Serial.begin(38400);
-  Serial.setTimeout(100);
+  Serial.setTimeout(50);
   //pinMode(10, INPUT_PULLUP);
   pinMode(2, OUTPUT);
   pinMode(3, OUTPUT);
@@ -46,55 +48,44 @@ void setup() {
     midiMode = false;
     String str = "";
     while (1) {
-      delay(500);
       str = "";
       Serial.println("I'm PMT!");
-      while (Serial.available()) {
+      if (Serial.available()) {
         str = Serial.readString();
+        if (str.substring(0,11) == "I hear you!")
+        {
+          String *colorDataGet=Split(str.substring(11,str.length()),'_');
+          for(int i=0;i<16;i++){
+            colorData[i][0]=colorDataGet[i].substring(0,1).toInt();
+            colorData[i][1]=colorDataGet[i].substring(1,2).toInt()-1;
+          }delete[]colorDataGet;
+          break;
+        }
       }
-      if (str == "I hear you!\n")break;
-      else Serial.println(str);
+      delay(500);
     }
   }
-  analogWrite(A1,1023);
 }
 int datacol = 0;
 bool status = 0;
 void loop() {
   if ((Serial.available()) && (midiMode == false)) {
     String strread = Serial.readString();
-    if (strread == "write_midiinfoA1") {
-      int i = micros();
-      int flag = 0;
-      while (!Serial.available()) {
-        if (micros() - i > 2000) {
-          flag = 1;
-          Serial.println("error");
-          break;
-        }
+    if (strread.substring(0,16) == "write_midiinfoA1") {
+        Serial.println(strread);
+        //memcpy(midiMode_info, Split(strread.substring(16,59), '_'), 59);
+        //String *saveData=Split(strread.substring(16,strread.length()), '_');
+        //for (int i = 0; i < 59; i++)Serial.println(saveData[i]);
+          //EEPROM.write(i, midiMode_info[i].toInt());
       }
-      if (flag == 0) {
-        String readl = Serial.readString();
-        memcpy(midiMode_info, Split(readl, '_'), sizeof(Split(readl, '_')));
-        analogWrite(A1, map(midiMode_info[26].toInt(), 0, 255, 0, 1023)); analogWrite(A2, map(midiMode_info[27].toInt(), 0, 255, 0, 1023)); analogWrite(A3, map(midiMode_info[28].toInt(), 0, 255, 0, 1023));
-        for (int i = 0; i < sizeof(midiMode_info); i++)
-          EEPROM.write(i + 50, midiMode_info[i].toInt());
+     else if (strread.substring(0,11) == "ColorChange") {
+      String *colorDataGet=Split(strread.substring(11,strread.length()),'_');
+      for(int i=0;i<16;i++){
+        colorData[i][0]=colorDataGet[i].substring(0,1).toInt();
+        colorData[i][1]=colorDataGet[i].substring(1,2).toInt()-1;
       }
-    }
-    if (strread == "ColorChange") {
-      int k = micros();
-      int flag = 0;
-      while (!Serial.available()) {
-        if (micros() - k > 2000)
-          flag = 1;
-        Serial.println("error");
-        break;
-      }
-      if (flag == 0) {
-        String* colors = Split(Serial.readString(), '_');
-        analogWrite(A1, map(colors[0].toInt(), 0, 255, 0, 1023)); analogWrite(A1, map(colors[1].toInt(), 0, 255, 0, 1023)); analogWrite(A1, map(colors[2].toInt(), 0, 255, 0, 1023));
-      }
-    } if (strread == "I'm PMTM!") {
+      delete[]colorDataGet;
+    } else if (strread == "I'm PMTM!") {
       Serial.print(midiMode);
     }
   }
@@ -124,11 +115,11 @@ void loop() {
     }
   }
 */
-  for (byte i = 0b000; i <= 0b100 ; i++) {
+  for (byte i = 0; i <= 4 ; i++) {
     digitalWrite(2, bitRead(i, 0));
     digitalWrite(3, bitRead(i, 1));
     digitalWrite(4, bitRead(i, 2));
-    for (byte j = 0b000; j <= 0b111 ; j++) {
+    for (byte j = 0; j <= 7 ; j++) {
       digitalWrite(5, bitRead(j, 0));
       digitalWrite(6, bitRead(j, 1));
       digitalWrite(7, bitRead(j, 2));
@@ -138,14 +129,14 @@ void loop() {
           if ((analRead > 125)&&(addpstatus[j]< 125)) {
             addpstatus[j]=analRead;
             if (midiMode) {
-              midi_Send("0xB" + String(midiMode_info[29].toInt(), HEX), midiMode_info[j + 16], 127);
+              midi_Send("0xB" + String(midiMode_info[0].toInt(), HEX), midiMode_info[j + 17], 127);
             } else {
               Serial.print("A1 "); Serial.print("cc "); Serial.print(String(j + 1)+" "); Serial.println(127);
             }
           }else if((analRead < 125)&&(addpstatus[j]> 125)){
             addpstatus[j]=analRead;
             if (midiMode) {
-              midi_Send("0xB" + String(midiMode_info[29].toInt(), HEX), midiMode_info[j + 16], 0);
+              midi_Send("0xB" + String(midiMode_info[0].toInt(), HEX), midiMode_info[j + 17], 0);
             } else {
               Serial.print("A1 "); Serial.print("cc "); Serial.print(String(j + 1)+" "); Serial.println(0);
             }
@@ -154,7 +145,7 @@ void loop() {
           if ((addpstatus[j] - analRead >= 2) || (addpstatus[j] - analRead <= -2)) {
             addpstatus[j] = analRead;if(addpstatus[j]==126)addpstatus[j] = analRead = 127;
             if (midiMode) {
-              midi_Send("0xB" + String(midiMode_info[29].toInt(), HEX), midiMode_info[j + 16], analRead);
+              midi_Send("0xB" + String(midiMode_info[0].toInt(), HEX), midiMode_info[j + 17], analRead);
             } else {
               Serial.print("A1 "); Serial.print("cc "); Serial.print(String(j + 1)+" "); Serial.println(analRead);
             }
@@ -165,17 +156,20 @@ void loop() {
         if ((addpstatus[5 + i] - analRead >= 2) || (addpstatus[5 + i] - analRead <= -2)) {
           addpstatus[5 + i] = analRead;if(addpstatus[5 + i]==126)addpstatus[5 + i] = analRead = 127;
           if (midiMode) {
-            midi_Send("0xB" + String(midiMode_info[29].toInt(), HEX), midiMode_info[21 + i], analRead);
+            midi_Send("0xB" + String(midiMode_info[0].toInt(), HEX), midiMode_info[22 + i], analRead);
           } else {
             Serial.print("A1 "); Serial.print("cc "); Serial.print(String(6 + i)+" "); Serial.println(analRead);
           }
         }
-      } else if (bstatus[j + (i - 1) * 8] == 1) {
-        //analogWrite(A0, 1023);
-      } else; //analogWrite(A0, 0);
-
+      } else{
+        if (midiMode)if(((bstatus[j + (i - 1) * 8] == 1)&&(midiMode_info[(j + (i - 1) * 8)*2+27]=="1"))or(midiMode_info[(j + (i - 1) * 8)*2+27]=="0")){
+          pinMode(A0,OUTPUT);analogWrite(A0,1023);analogWrite(A1,colors[colorData[j + (i - 1) * 8][1]][0]);analogWrite(A2,colors[colorData[j + (i - 1) * 8][1]][1]);analogWrite(A3,colors[colorData[j + (i - 1) * 8][1]][2]);analogWrite(A0,0);pinMode(A0,INPUT);
+        }
+        if (!midiMode)if(((bstatus[j + (i - 1) * 8] == 1)&&(colorData[j + (i - 1) * 8][0]==1))or(colorData[j + (i - 1) * 8][0]==0)){
+          pinMode(A0,OUTPUT);analogWrite(A0,1023);analogWrite(A1,colors[colorData[j + (i - 1) * 8][1]][0]);analogWrite(A2,colors[colorData[j + (i - 1) * 8][1]][1]);analogWrite(A3,colors[colorData[j + (i - 1) * 8][1]][2]);delay(1);analogWrite(A0,0);pinMode(A0,INPUT);
+        }
+      }
     }
-    delay(2);
   }
 }
 /*for (byte i = 0b001; i <= 0b010 ; i++) {

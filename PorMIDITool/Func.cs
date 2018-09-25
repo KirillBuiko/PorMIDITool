@@ -12,6 +12,110 @@ namespace PorMIDITool
 {
     class Func
     {
+        public static Button button_update(int number, Button btn, string profile)
+        {
+            number++;
+            try
+            {
+                String[] colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[number].Split(' ');
+
+                if (colset[0] == "1")
+                {
+                    btn.Paint += button_Paint; Brush br;
+                    void button_Paint(object s, PaintEventArgs es)
+                    {
+                        br = new SolidBrush(Form1.colors[Convert.ToInt32(colset[1]) - 1]);
+                        es.Graphics.Clear(Form1.colors[6]);
+                        Button bt = (s as Button);
+                            try
+                            {
+                                Point[] p = { new Point(0, 0), new Point(bt.Width , 0), new Point(0, bt.Height ) };
+                                es.Graphics.FillPolygon(br, p);
+                            }
+                            catch (Exception) { es.Graphics.Clear(Color.LightGray); }
+
+                    }
+                }
+                else if (colset[0] == "0")
+                {
+                    btn.Paint += button_Paint;
+                    void button_Paint(object s, PaintEventArgs es)
+                    {
+                        es.Graphics.Clear(Form1.colors[Convert.ToInt32(colset[1]) - 1]);
+                    }
+                }
+                else
+                {
+                    btn.Paint += button_Paint;
+                    void button_Paint(object s, PaintEventArgs es)
+                    {
+                        es.Graphics.Clear(Color.LightGray);
+                    }
+                }
+            }            
+            catch (Exception) {
+                btn.Paint += button_Paint;
+                void button_Paint(object s, PaintEventArgs es)
+                {
+                    es.Graphics.Clear(Color.LightGray);
+                }
+            }
+            btn.Invalidate();
+            btn.Update();
+            return btn;
+        }
+        public static Button button_update(string color, Button btn, string type)
+        {
+            try
+            {
+                String[] colset = {type.ToString(),color.ToString()};
+
+                if (colset[0] == "1")
+                {
+                    btn.Paint += button_Paint; Brush br;
+                    void button_Paint(object s, PaintEventArgs es)
+                    {
+                        br = new SolidBrush(Form1.colors[Convert.ToInt32(colset[1]) - 1]);
+                        es.Graphics.Clear(Form1.colors[6]);
+                        Button bt = (s as Button);
+                        try
+                        {
+                            Point[] p = { new Point(0, 0), new Point(bt.Width, 0), new Point(0, bt.Height) };
+                            es.Graphics.FillPolygon(br, p);
+                        }
+                        catch (Exception) { es.Graphics.Clear(Color.LightGray); }
+
+                    }
+                }
+                else if (colset[0] == "0")
+                {
+                    btn.Paint += button_Paint;
+                    void button_Paint(object s, PaintEventArgs es)
+                    {
+                        es.Graphics.Clear(Form1.colors[Convert.ToInt32(colset[1]) - 1]);
+                    }
+                }
+                else
+                {
+                    btn.Paint += button_Paint;
+                    void button_Paint(object s, PaintEventArgs es)
+                    {
+                        es.Graphics.Clear(Color.LightGray);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                btn.Paint += button_Paint;
+                void button_Paint(object s, PaintEventArgs es)
+                {
+                    es.Graphics.Clear(Color.LightGray);
+                }
+            }
+            btn.Invalidate();
+            btn.Update();
+            return btn;
+        }
         public static FormC Constructor(String path, FormC result)
         {
 
