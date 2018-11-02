@@ -147,6 +147,7 @@ namespace PorMIDITool
             this.профильToolStripMenuItem.Name = "профильToolStripMenuItem";
             this.профильToolStripMenuItem.Size = new System.Drawing.Size(71, 20);
             this.профильToolStripMenuItem.Text = "Профиль";
+            this.профильToolStripMenuItem.MouseEnter += new System.EventHandler(this.загрузитьВМодульToolStripMenuItem_MouseEnter);
             // 
             // toolStripMenuItem1
             // 
@@ -171,7 +172,7 @@ namespace PorMIDITool
             this.загрузитьВМодульToolStripMenuItem.Name = "загрузитьВМодульToolStripMenuItem";
             this.загрузитьВМодульToolStripMenuItem.Size = new System.Drawing.Size(244, 22);
             this.загрузитьВМодульToolStripMenuItem.Text = "Загрузить в модуль";
-            this.загрузитьВМодульToolStripMenuItem.MouseEnter += new System.EventHandler(this.загрузитьВМодульToolStripMenuItem_MouseEnter);
+            this.загрузитьВМодульToolStripMenuItem.Click += new System.EventHandler(this.загрузитьВМодульToolStripMenuItem_Click);
             // 
             // настройкиToolStripMenuItem
             // 

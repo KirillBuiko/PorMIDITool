@@ -48,7 +48,7 @@ namespace PorMIDITool
                     //MessageBox.Show(count.ToString());
                     com.Close(); // To handle the exception, in case the port isn't found and then they try again...
                     com.PortName = s;
-                    com.BaudRate = 38400;
+                    com.BaudRate = 115200;
 
                     //MessageBox.Show("try con " + com.PortName);
                     com.Open();
@@ -62,7 +62,7 @@ namespace PorMIDITool
                         if (com.IsOpen) // Port has been opened properly...
                         {
                             //MessageBox.Show("opn " + com.PortName);
-                            com.ReadTimeout = 2000; com.ReadLine();
+                            com.ReadTimeout = 5000; com.ReadLine();
                             string comms = com.ReadLine();
                             //MessageBox.Show("red " + com.PortName + " "+comms);
                             if (comms.Substring(0, 8).Equals("I'm PMT!")) // We have found the arduino!

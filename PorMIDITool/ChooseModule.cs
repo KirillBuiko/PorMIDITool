@@ -14,6 +14,7 @@ namespace PorMIDITool
     public partial class ChooseModule : Form
     {
         public bool open = false;
+        public String chosenMod="";
         public ChooseModule()
         {
             InitializeComponent();
@@ -21,6 +22,7 @@ namespace PorMIDITool
 
         private void ChooseModule_Open(object sender, EventArgs e)
         {
+            open = false;
             comboBox1.Items.Clear();
             if (!Directory.Exists("C:/ProgramData/PorMIDITool/modules"))
             {
@@ -39,7 +41,12 @@ namespace PorMIDITool
                     {
                         if (comp == Line.Split(' ')[1]) flag = true;
                     }
-                    if (!flag)comboBox1.Items.Add(Line.Split(' ')[1]);
+                        if (!flag)
+                        {
+                            comboBox1.Items.Add(Line.Split(' ')[1]);
+                            if (Line.Split(' ')[1] == chosenMod)
+                                comboBox1.SelectedItem=chosenMod;
+                        }
                 }
             }
 
@@ -102,6 +109,11 @@ namespace PorMIDITool
                     }
                 }
             }
+        }
+
+        private void ChooseModule_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }

@@ -11,7 +11,8 @@ int mode = 0;
 
 void setup()
 {
-  Serial.begin(38400);
+  Serial.begin(90000);
+  Serial.setTimeout(2);
   pinMode(13, OUTPUT);
 
   pinMode(2, INPUT_PULLUP);
@@ -44,44 +45,50 @@ void setup()
   delay(50);
   digitalWrite(13, LOW);
   delay(300);
-  mode = EEPROM.read(4);
-  for (int i = 0; i < 4; i++)midiMode[i] = EEPROM.read(i);
-  while (!Serial.available()) {
-    delay(1000);
-    Serial.print("I'm PMTM!");
-  }
-  if (Serial.available()) {
-    midiMode = Serial.readString().toInt();
-    if (midiMode > 10) {
-      channel = String(midiMode).substring(1, String(midiMode).length());
-      midiMode = 1;
+  mode = EEPROM.read(5);
+  for (int i = 0; i < 5; i++)midiMode_info[i] = EEPROM.read(i);
+  while (1) {
+    if (Serial.available()) {
+    String strread=Serial.readString();
+    if(strread.substring(0,14)=="I hear you, M!"){
+      if(strread.substring(14,15)=="0"){
+        midiMode=0;
+      }else{
+        channel = midiMode_info[0];
+        midiMode = 1;
+      }
+      break;
     }
+    midiMode = Serial.readString().toInt();
   }
+
+    Serial.print("I'm PMTM!B1FS");
+    delay(2000);
+  }
+  if(mode==1){
+      mode_active=0;
+      digitalWrite(mode_active+7, HIGH);
+    }
+
 }
 void loop() {
   if ((Serial.available()) && (midiMode == false)) {
     String strread = Serial.readString();
     if (strread == "write_midiinfoB1FS") {
-      int i = micros();
-      int flag = 0;
-      while (!Serial.available()) {
-        if (micros() - i > 2000) {
-          flag = 1;
-          Serial.println("error");
-          break;
+      int num=0;
+      while(!Serial.available());
+      int count = Serial.readString().toInt();
+      for(int j=0;j<count;j++){
+        while(!Serial.available());
+        strread = Serial.readString();
+        if(j==0){
+          EEPROM.write(0, strread.toInt());
+          continue;
         }
-      }
-      if (flag == 0) {
-        String readl = Serial.readString();
-        memcpy(midiMode_info, Split(readl, '_'), sizeof(Split(readl, '_')));
-        for (int i = 0; i < sizeof(midiMode_info); i++) {
-          int Name = Split(String(midiMode_info[i]), '&')[0].toInt();
-          if (Name > 0 && Name < 5) {
-            midiMode_info[Name] = Split(midiMode_info[i], '&')[0].toInt()[1];
-            (if midiMode_info[Name] > 127)midiMode_info[Name] = 127; if (midiMode_info[Name] < 0)midiMode_info[Name] = 0;
-            EEPROM.write(Name, midiMode_info[Name]);
-          }
-        }
+        String *saveData=Split(strread, '_');
+        if(saveData[0].substring(0,2)=="tx")
+        EEPROM.write(saveData[0].substring(2,3).toInt(), saveData[1].toInt());
+        delete[]saveData;
       }
     }
   }
@@ -94,13 +101,17 @@ void loop() {
   } else if (but_on[0] == true) {
     but_on[0] = false;
     //Serial.print("1 off, ");Serial.println(mode);
+    digitalWrite(7, LOW);
+    digitalWrite(8, LOW);
+    digitalWrite(9, LOW);
+
     mode = 1 - mode;
-    EEPROM.write(4, mode);
+    EEPROM.write(5, mode);
     if (mode == 0) {
       for (int i = 0; i < 5; i++) {
         but_on[i] = 0;
       }
-    }
+    }else digitalWrite(mode_active+7, HIGH);
   }
   for (int j = 0; j < 3; j++) {
     //////////////////////////////////////////////////2////////////////////////
@@ -110,10 +121,15 @@ void loop() {
         but_on[j + 1] = true;
         if (mode == 0) {
           digitalWrite(j + 7, HIGH);
-          if (midiMode == 0)
-            Serial.print("B1FS "); Serial.print("cc "); Serial.println(String(j + 1) + " 127");
+          if (midiMode == 0) {
+            Serial.print("B1FS "); Serial.print("cc tx"); Serial.println(String(j + 1) + " 127");
+          } else
+          midi_Send("B" + String(channel, HEX), midiMode_info[j+1], 127);
+          if (midiMode == 0){
+            Serial.print("B1FS "); Serial.print("cc tx"); Serial.println(String(j + 1) + " 127");
+          }
           else
-            midi_Send("0xB" + String(channel, HEX), midiMode_info[j], 127);
+            midi_Send("B" + String(channel, HEX), midiMode_info[j+1], 127);
         } else {
           if (mode_active != j) {
             digitalWrite(7, LOW);
@@ -122,11 +138,11 @@ void loop() {
             digitalWrite(j + 7, HIGH);
             mode_active = j;
             if (midiMode == 0) {
-              Serial.print("B1FS "); Serial.print("cc "); Serial.println(String(j + 1) + " 127");
-              Serial.print("B1FS "); Serial.print("cc "); Serial.println(String(j + 1) + " 0");
+              Serial.print("B1FS "); Serial.print("cc tx"); Serial.println(String(j + 1) + " 127");
+              Serial.print("B1FS "); Serial.print("cc tx"); Serial.println(String(j + 1) + " 0");
             } else {
-              midi_Send("0xB" + String(channel, HEX), midiMode_info[j], 127);
-              midi_Send("0xB" + String(channel, HEX), midiMode_info[j], 0);
+              midi_Send("B" + String(channel, HEX), midiMode_info[j+1], 127);
+              midi_Send("B" + String(channel, HEX), midiMode_info[j+1], 0);
             }
           }
         }
@@ -136,7 +152,10 @@ void loop() {
       //Serial.print("2 off, ");Serial.println(mode);
       if (mode == 0) {
         digitalWrite(j + 7, LOW);
-        Serial.print("B1FS "); Serial.print("cc "); Serial.println(String(j + 1) + " 0");
+        if (midiMode == 0) {
+          Serial.print("B1FS "); Serial.print("cc tx"); Serial.println(String(j + 1) + " 0");
+        } else
+        midi_Send("B" + String(channel, HEX), midiMode_info[j+1], 0);
       } else {
         if (mode_active != j) {
           digitalWrite(8, LOW);
@@ -145,11 +164,11 @@ void loop() {
           digitalWrite(j + 7, HIGH);
           mode_active = j;
           if (midiMode == 0) {
-            Serial.print("B1FS "); Serial.print("cc "); Serial.println(String(j + 1) + " 127");
-            Serial.print("B1FS "); Serial.print("cc "); Serial.println(String(j + 1) + " 0");
+            Serial.print("B1FS "); Serial.print("cc tx"); Serial.println(String(j + 1) + " 127");
+            Serial.print("B1FS "); Serial.print("cc tx"); Serial.println(String(j + 1) + " 0");
           } else {
-            midi_Send("0xB" + String(channel, HEX), midiMode_info[j], 127);
-            midi_Send("0xB" + String(channel, HEX), midiMode_info[j], 0);
+            midi_Send("B" + String(channel, HEX), midiMode_info[j+1], 127);
+            midi_Send("B" + String(channel, HEX), midiMode_info[j+1], 0);
           }
         }
       }
@@ -161,18 +180,20 @@ void loop() {
       //Serial.print("5 on, ");Serial.println(mode);
       but_on[4] = true;
       digitalWrite(10, HIGH);
-      if (midiMode == 0)
-        Serial.print("B1FS "); Serial.println("cc 4 0");
+      if (midiMode == 0){
+        Serial.print("B1FS "); Serial.println("cc tx4 127");
+      }
       else
-        midi_Send("0xB" + String(channel, HEX), midiMode_info[3], 0);
+        midi_Send("B" + String(channel, HEX), midiMode_info[4], 0);
     }
   } else if (but_on[4] == true) {
     but_on[4] = false;
     //Serial.print("5 off, ");Serial.println(mode);
     digitalWrite(10, LOW);
-    if (midiMode == 0)
-      Serial.print("B1FS "); Serial.println("cc 4 0");
+    if (midiMode == 0){
+      Serial.print("B1FS "); Serial.println("cc tx4 0");
+    }
     else
-      midi_Send("0xB" + String(channel, HEX), midiMode_info[3], 127);
+      midi_Send("B" + String(channel, HEX), midiMode_info[4], 127);
   }
 }

@@ -89,6 +89,7 @@
             this.Name = "ChooseModule";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "ChooseModule";
+            this.Load += new System.EventHandler(this.ChooseModule_Load);
             this.Shown += new System.EventHandler(this.ChooseModule_Open);
             this.ResumeLayout(false);
             this.PerformLayout();

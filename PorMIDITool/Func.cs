@@ -27,12 +27,12 @@ namespace PorMIDITool
                         br = new SolidBrush(Form1.colors[Convert.ToInt32(colset[1]) - 1]);
                         es.Graphics.Clear(Form1.colors[6]);
                         Button bt = (s as Button);
-                            try
-                            {
-                                Point[] p = { new Point(0, 0), new Point(bt.Width , 0), new Point(0, bt.Height ) };
-                                es.Graphics.FillPolygon(br, p);
-                            }
-                            catch (Exception) { es.Graphics.Clear(Color.LightGray); }
+                        try
+                        {
+                            Point[] p = { new Point(0, 0), new Point(bt.Width, 0), new Point(0, bt.Height) };
+                            es.Graphics.FillPolygon(br, p);
+                        }
+                        catch (Exception) { es.Graphics.Clear(Color.LightGray); }
 
                     }
                 }
@@ -52,8 +52,9 @@ namespace PorMIDITool
                         es.Graphics.Clear(Color.LightGray);
                     }
                 }
-            }            
-            catch (Exception) {
+            }
+            catch (Exception)
+            {
                 btn.Paint += button_Paint;
                 void button_Paint(object s, PaintEventArgs es)
                 {
@@ -68,7 +69,7 @@ namespace PorMIDITool
         {
             try
             {
-                String[] colset = {type.ToString(),color.ToString()};
+                String[] colset = { type.ToString(), color.ToString() };
 
                 if (colset[0] == "1")
                 {
@@ -120,9 +121,10 @@ namespace PorMIDITool
         {
 
             String[] file = File.ReadAllText(path).Split(';');
-            for(int i = 0; i < file.Length; i++)
-            {   if(file[i]!="")
-                if (file[i].Substring(0,2)=="\r\n") file[i] = file[i].Substring(2, file[i].Length-2);
+            for (int i = 0; i < file.Length; i++)
+            {
+                if (file[i] != "")
+                    if (file[i].Substring(0, 2) == "\r\n") file[i] = file[i].Substring(2, file[i].Length - 2);
             }
             foreach (String Line in file)
             {
@@ -140,14 +142,14 @@ namespace PorMIDITool
                             btn.ForeColor = Color.Black;
                             btn = (ControlConstr(btn, SLine[++ccount], Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount])) as Button);
                             while (ccount + 1 < SLine.Length) switch (SLine[++ccount])
-                            {
-                                case "fontsize":
-                                    btn.Font = new Font(btn.Font.Name, Convert.ToInt32(SLine[++ccount]));
-                                    break;
-                                case "text":
-                                    btn.Text = SLine[++ccount];
-                                    break;
-                            }
+                                {
+                                    case "fontsize":
+                                        btn.Font = new Font(btn.Font.Name, Convert.ToInt32(SLine[++ccount]));
+                                        break;
+                                    case "text":
+                                        btn.Text = SLine[++ccount];
+                                        break;
+                                }
                             result.Controls.Add(btn);
                             break;
                         case "cmb":
@@ -155,55 +157,62 @@ namespace PorMIDITool
                             cmb.ForeColor = Color.Black;
                             cmb = (ControlConstr(cmb, SLine[++ccount], Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount])) as ComboBox);
                             while (ccount + 1 < SLine.Length) switch (SLine[++ccount])
-                            {
-                                case "fontsize":
-                                    cmb.Font = new Font(cmb.Font.Name, Convert.ToInt32(SLine[++ccount]));
-                                    break;
-                                case "text":
-                                    cmb.Text = SLine[++ccount];
-                                    break;
-                            }
+                                {
+                                    case "fontsize":
+                                        cmb.Font = new Font(cmb.Font.Name, Convert.ToInt32(SLine[++ccount]));
+                                        break;
+                                    case "text":
+                                        cmb.Text = SLine[++ccount];
+                                        break;
+                                    case "collection":
+                                        String[] Collection = SLine[++ccount].Split('&');
+                                        foreach (String str in Collection)
+                                        {
+                                            cmb.Items.Add(str);
+                                        }
+                                        break;
+                                }
                             result.Controls.Add(cmb);
                             break;
                         case "lbl":
                             Label lbl = new Label();
                             lbl.ForeColor = Color.Black;
                             lbl = (ControlConstr(lbl, SLine[++ccount], Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount])) as Label);
-                            while (ccount+1 < SLine.Length)switch (SLine[++ccount])
-                            {
-                                case "fontsize":
-                                    lbl.Font = new Font(lbl.Font.Name, Convert.ToInt32(SLine[++ccount]));
-                                    break;
-                                case "text":
-                                    lbl.Text = SLine[++ccount];
-                                    break;
-                            }
+                            while (ccount + 1 < SLine.Length) switch (SLine[++ccount])
+                                {
+                                    case "fontsize":
+                                        lbl.Font = new Font(lbl.Font.Name, Convert.ToInt32(SLine[++ccount]));
+                                        break;
+                                    case "text":
+                                        lbl.Text = SLine[++ccount];
+                                        break;
+                                }
                             result.Controls.Add(lbl);
                             break;
                         case "txt":
                             TextBox txt = new TextBox();
                             txt = (ControlConstr(txt, SLine[++ccount], Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount])) as TextBox);
                             while (ccount + 1 < SLine.Length) switch (SLine[++ccount])
-                            {
-                                case "fontsize":
-                                    txt.Font = new Font(txt.Font.Name, Convert.ToInt32(SLine[++ccount]));
-                                    break;
-                                case "readonly":
-                                    txt.ReadOnly = true;
-                                    break;
-                                case "text":
-                                    txt.Text = SLine[++ccount];
-                                    break;
-                            }
+                                {
+                                    case "fontsize":
+                                        txt.Font = new Font(txt.Font.Name, Convert.ToInt32(SLine[++ccount]));
+                                        break;
+                                    case "readonly":
+                                        txt.ReadOnly = true;
+                                        break;
+                                    case "text":
+                                        txt.Text = SLine[++ccount];
+                                        break;
+                                }
                             result.Controls.Add(txt);
                             break;
                         case "about":
-                            for(int i=1;i<SLine.Length;i++)
-                            result.about = result.about+SLine[i]+" ";
+                            for (int i = 1; i < SLine.Length; i++)
+                                result.about = result.about + SLine[i] + " ";
                             break;
                         case "form":
                             result.Size = new Size(Convert.ToInt32(SLine[++ccount]), Convert.ToInt32(SLine[++ccount]));
-                            break; 
+                            break;
                         case "for":
                             break;
                     }

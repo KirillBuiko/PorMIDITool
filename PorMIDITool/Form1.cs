@@ -25,12 +25,14 @@ namespace PorMIDITool
         int modulesCounter = 0;
         int octave;
         int profile;
+        int sleepTime = 30;
         SerialPort com;
         GroupBox gb;
         FormSettings f2;
         ChooseModule cm;
         FileStream profiles;
         FileStream conf;
+        bool formClosing = false;
         Thread SerialTask;
         ColorDialog MyDialog;
         FormC[] modules;
@@ -95,20 +97,25 @@ namespace PorMIDITool
                     addptb[i, j].Text = profstr[k];
                 }
             }
-            String message = "ColorChange";
-            for (int i = 0; i < 16; i++)
+            if (com.IsOpen)
             {
-                try
+                String message = "";
+                com.Write("ColorChange");
+                Thread.Sleep(sleepTime);
+                for (int i = 0; i < 16; i++)
                 {
-                    String[] colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[i + 1].Split(' ');
-                    message = message + colset[0] + colset[1] + "_";
-                }
-                catch (Exception)
-                {
-                    message = message + "20_";
+                    try
+                    {
+                        String[] colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[i + 1].Split(' ');
+                        com.Write(colset[0] + colset[1]);
+                    }
+                    catch (Exception)
+                    {
+                        com.Write("20");
+                    }
+                    Thread.Sleep(sleepTime);
                 }
             }
-            com.Write(message);
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -212,7 +219,7 @@ namespace PorMIDITool
                     addptb[i, j] = new TextBox();
                     addptb[i, j].Tag = k++;
                     addptb[i, j].Name = "addtb" + (k - 32).ToString();
-                    addptb[i, j].Size = new System.Drawing.Size(40, 20);
+                    addptb[i, j].Size = new System.Drawing.Size(sleepTime, 20);
                     addptb[i, j].Text = profstr[k - 16];
                     addptb[i, j].Location = new Point(335 + j * 60, i * 55 + 180);
                     Controls.Add(addptb[i, j]);
@@ -284,17 +291,19 @@ namespace PorMIDITool
         {
             if (f2.open == true)
             {
+                
                 try
                 {
-                    midiin.Close();
+                    //midiin.MessageReceived += null;
+                    //midiin.Close();
                     midiout.Close();
                 }
                 catch (NullReferenceException) { }
                 try
                 {
-                    midiin = new MidiIn(f2.deviceIDIn);
-                    midiin.MessageReceived += Midiin_MessageReceived;
-                    midiin.Start();
+                    //midiin = new MidiIn(f2.deviceIDIn);
+                    //midiin.MessageReceived += Midiin_MessageReceived;
+                    //midiin.Start();
                 }
                 catch (Exception) { MessageBox.Show("Устройство на вход не было открыто. Попробуйте изменить настройки"); }
                 try
@@ -304,13 +313,13 @@ namespace PorMIDITool
 
                 catch (Exception) { MessageBox.Show("Устройство на выход не было открыто. Попробуйте изменить настройки"); }
                 try
-                {
+                { 
                     com.Close();
                 }
                 catch (Exception) { }
                 try
                 {
-                    com.BaudRate = 38400;
+                    com.BaudRate = 115200;
                     com.PortName = f2.deviceCOM;
                     com.Open();
                     Thread.Sleep(2000);
@@ -329,7 +338,7 @@ namespace PorMIDITool
                     }com.Write(message);
                     SerialTask.Start();
                 }
-                catch (Exception ex) { MessageBox.Show(ex.ToString()+"Exception"); }
+                catch (Exception ex) { }
                 channel = f2.channel;
             }
             else Close();
@@ -347,7 +356,8 @@ namespace PorMIDITool
                         modules[i] = new FormC();
                         modules[i] = Func.Constructor(cm.Text, modules[i]);
                         modules[i].FormClosing += ModuleClose;
-                        modules[i].Show();modules[i].Left = this.Left;modules[i].Top = this.Top + 481;
+                        modules[i].Show();
+                        modules[i].Left = this.Left;modules[i].Top = this.Top + 481;
                         break;
                     }
                 }
@@ -358,7 +368,7 @@ namespace PorMIDITool
 
         void SerialTaskR()
         {
-            while (true)
+            while (!formClosing)
                 try
                 {
                     if (com.IsOpen)
@@ -368,23 +378,31 @@ namespace PorMIDITool
                         {
                             rbuf = com.ReadLine().Split(new char[] { ' ' });
                             int note = 0;
-                            if (rbuf[0] == "A1")
+                            bool flag = false;
+                            if (rbuf[0] == "ModuleConnected")
                             {
+                                Object b = new Object();EventArgs a = new EventArgs();
+                                cm.chosenMod=rbuf[1];
+                                addmodb3.Invoke((MethodInvoker)delegate { addmodb3_Click(b, a); });
+                                flag = true;
+                            }else if (rbuf[0] == "A1")
+                            {flag = true;
                                 if (rbuf[1] == "b") note = Convert.ToInt32(this.Controls["tb" + rbuf[2]].Text);
                                 if (rbuf[1] == "cc") note = Convert.ToInt32(Controls["addtb" + rbuf[2]].Text);
-                            }
-                            else
+                            }else
                             {
-                                bool flag = false;
                                 foreach (FormC form in modules)
                                 {
                                     if (rbuf[0] == form.Text)
                                     {
-                                        note = Convert.ToInt32(form.Controls.Find(rbuf[2], false)[0].Text); flag = true; break;
+                                        note = Convert.ToInt32(form.Controls.Find(rbuf[2], false)[0].Text);
+                                        flag = true;
+                                        break;
                                     }
                                 }
+                                
                             }
-
+                            if (flag)
                             {
                                 if (rbuf[1] == "b")
                                 {
@@ -393,7 +411,7 @@ namespace PorMIDITool
                                     {
                                         midi_Send(note, "9", 127);
                                     }
-                                    else midi_Send(note, "8", 127);
+                                    else midi_Send(note, "9", 0);
                                 }
                                 if (rbuf[1] == "cc")
                                 {
@@ -403,7 +421,7 @@ namespace PorMIDITool
                         }
                     }
                 }
-                catch (Exception ex) { MessageBox.Show(ex.Message); }
+                catch (Exception ex) { }
         }
         void button_MouseDown(object s, MouseEventArgs args)
         {
@@ -415,14 +433,16 @@ namespace PorMIDITool
         {
             int tag = Convert.ToInt32((s as Button).Tag);
             int note = Convert.ToInt32(this.Controls["tb" + (tag - 15).ToString()].Text);
-            midi_Send(note, "8", 127);
+            midi_Send(note, "9", 0);
         }
         void midi_Send(int note, string type, int velocity)
         {
             String strnote;
             if (note < 16) strnote = "0" + note.ToString("X");
             else strnote = note.ToString("X");
-            String vel = velocity.ToString("X");
+            String vel;
+            if (velocity < 16) vel = "0" + velocity.ToString("X");
+            else vel = velocity.ToString("X");
             String channel = this.channel.ToString("X");
             midiout.Send(Convert.ToInt32(vel + strnote + type + channel, 16));
             switch (type)
@@ -453,15 +473,15 @@ namespace PorMIDITool
             if (type.Equals("B"))//MessageBox.Show(midimes,"",MessageBoxButtons.OK,MessageBoxIcon.Asterisk);
                 this.Invoke(new EventHandler(delegate { richTextBox2.Text = DateTime.Now.ToString().Substring(11, 8) + ", CC " + note.ToString() + ", " + velocity.ToString() + '\n' + richTextBox2.Text; }));
 
-            //midiout.Send(e.RawMessage);
+            MessageBox.Show(e.RawMessage.ToString());
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
             try
             {
-                midiout.Dispose();
-                midiin.Dispose();
+                midiout.Close();
+                //midiin.Close();
                 com.Close();
                 SerialTask.Abort();
             }
@@ -470,6 +490,11 @@ namespace PorMIDITool
 
         private void настройкиToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            try
+            {
+                com.Close();
+            }
+            catch (Exception) { }
             f2.ShowDialog();
         }
 
@@ -492,6 +517,7 @@ namespace PorMIDITool
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             string save = ""; save += octave.ToString();
+            String []Lines = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile.ToString()+".pmt");
             for (int i = 1; i < 17; i++)
             {
                 save += " " + this.Controls["tb" + (i).ToString()].Text;
@@ -499,9 +525,8 @@ namespace PorMIDITool
             for (int i = 1; i < 11; i++)
             {
                 save += " " + this.Controls["addtb" + (i).ToString()].Text;
-            }
-            profiles.Close();
-            File.WriteAllText("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile.ToString() + ".pmt", save);
+            }Lines[0] = save;
+            File.WriteAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile.ToString() + ".pmt", Lines);
         }
         void oct_Click(object s, EventArgs args)
         {
@@ -522,21 +547,21 @@ namespace PorMIDITool
         private void colorb_Click(object sender, EventArgs e)
         {
             Form colorc = new Form();
-            colorc.Size = new Size(490,420);
+            colorc.Size = new Size(490, 420);
             colorc.Icon = this.Icon;
             colorc.FormBorderStyle = FormBorderStyle.FixedSingle;
             colorc.StartPosition = FormStartPosition.CenterScreen;
             colorc.Text = "Определение цветов";
             colorc.FormClosed += coloc_Closed;
-            string[] colorsNames = { "Красный", "Зелёный", "Синий","Жёлтый","Голубой","Сереневый","Белый"};
-            string[] typesNames = {"Включён всегда","Включён при нажатие","Выключен"};
-            Color[] colors = { Color.FromArgb(252, 38, 70)/*Red*/, Color.FromArgb(112,186,60)/*Green*/, Color.FromArgb(65, 105, 225)/*Blue*/, Color.FromArgb(225, 204, 79)/*Yellow*/, Color.FromArgb(92, 154, 204)/*Strange Blue*/, Color.FromArgb(153, 102, 204)/*Purple*/, Color.FromArgb(245, 245, 245)/*White*/  };
+            string[] colorsNames = { "Красный", "Зелёный", "Синий", "Жёлтый", "Голубой", "Сереневый", "Белый" };
+            string[] typesNames = { "Включён всегда", "Включён при нажатие", "Выключен" };
+            Color[] colors = { Color.FromArgb(252, 38, 70)/*Red*/, Color.FromArgb(112, 186, 60)/*Green*/, Color.FromArgb(65, 105, 225)/*Blue*/, Color.FromArgb(225, 204, 79)/*Yellow*/, Color.FromArgb(92, 154, 204)/*Strange Blue*/, Color.FromArgb(153, 102, 204)/*Purple*/, Color.FromArgb(245, 245, 245)/*White*/  };
             ComboBox[,] cbc = new ComboBox[4, 4]; ComboBox[,] cbt = new ComboBox[4, 4]; Button[,] b2 = new Button[4, 4];
             for (int i = 0; i < 4; i++)
             {
                 for (int j = 0; j < 4; j++)
                 {
-                    String[] colset = {"2","1"};
+                    String[] colset = { "2", "1" };
                     try
                     {
                         colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[i * 4 + j + 1].Split(' ');
@@ -555,9 +580,9 @@ namespace PorMIDITool
                         cbc[j, i].DrawMode = DrawMode.OwnerDrawFixed;
                         cbc[j, i].DropDownStyle = ComboBoxStyle.DropDownList;
                         colorc.Controls.Add(cbc[j, i]); cbc[j, i].BringToFront();
-                        cbc[j, i].SelectedIndex = Convert.ToInt32(colset[1])-1;
+                        cbc[j, i].SelectedIndex = Convert.ToInt32(colset[1]) - 1;
                         cbc[j, i].SelectedIndexChanged += cb_Selected;
-                    } 
+                    }
                     catch (Exception) { cbc[j, i].SelectedIndex = 0; cbc[j, i].SelectedIndexChanged += cb_Selected; }
                     try
                     {
@@ -575,11 +600,11 @@ namespace PorMIDITool
                     try
                     {
                         b2[j, i] = new Button();
-                        b2[j, i].Name = "b"+(i * 4 + j).ToString();
+                        b2[j, i].Name = "b" + (i * 4 + j).ToString();
                         b2[j, i].Size = new System.Drawing.Size(100, 70);
                         b2[j, i].Location = new Point(j * 105 + 30, i * 75 + 30);
                         colorc.Controls.Add(b2[j, i]);
-                        Func.button_update(colset[1],b2[j,i],colset[0]);
+                        Func.button_update(colset[1], b2[j, i], colset[0]);
                     }
                     catch (Exception) { Func.button_update("1", b2[j, i], "2"); }
                 }
@@ -591,40 +616,43 @@ namespace PorMIDITool
                     f.Graphics.FillRectangle(br, f.Bounds);
                 }
             }
-            void cb_Selected(object es,EventArgs args)
+            void cb_Selected(object es, EventArgs args)
             {
-                String[] Lines = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt");int num = Convert.ToInt32((es as ComboBox).Name);
+                String[] Lines = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt"); int num = Convert.ToInt32((es as ComboBox).Name);
                 if (Lines.Length < 17)
                 {
-                    String[] Lines2=new String[17];
-                    Array.Copy(Lines,Lines2,Lines.Length);
-                    Lines = new String[17]; Array.Copy(Lines2,Lines,17);
+                    String[] Lines2 = new String[17];
+                    Array.Copy(Lines, Lines2, Lines.Length);
+                    Lines = new String[17]; Array.Copy(Lines2, Lines, 17);
                 }
                 Lines[num + 1] = cbt[num % 4, num / 4].SelectedIndex.ToString() + " " + (cbc[num % 4, num / 4].SelectedIndex + 1).ToString();
                 Func.button_update((cbc[num % 4, num / 4].SelectedIndex + 1).ToString(), b[num % 4, num / 4], cbt[num % 4, num / 4].SelectedIndex.ToString());
                 Func.button_update((cbc[num % 4, num / 4].SelectedIndex + 1).ToString(), b2[num % 4, num / 4], cbt[num % 4, num / 4].SelectedIndex.ToString());
                 File.WriteAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt", Lines);
             }
-            void coloc_Closed(object es,FormClosedEventArgs args)
+            void coloc_Closed(object es, FormClosedEventArgs args)
             {
                 if (com.IsOpen)
                 {
-                    String message = "ColorChange";
+                    String message = "";
+                    com.Write("ColorChange");
+                    Thread.Sleep(sleepTime);
                     for (int i = 0; i < 16; i++)
                     {
                         try
                         {
                             String[] colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[i + 1].Split(' ');
-                            message = message + colset[0] + colset[1] + "_";
+                            com.Write(colset[0] + colset[1]);
                         }
                         catch (Exception)
                         {
-                            message = message + "20_";
-
+                            com.Write("20");
                         }
+                        Thread.Sleep(sleepTime);
                     }
-                    com.Write(message);
+                    
                 }
+
             }
             colorc.ShowDialog();
         }
@@ -658,13 +686,19 @@ namespace PorMIDITool
             if (com.IsOpen)
                 foreach (FormC form in modules)
                 {
-                    if (form.Text == (sender as ToolStripMenuItem).Text)
+                    if (form.Text == (sender as ToolStripMenuItem).Text.Substring(3, (sender as ToolStripMenuItem).Text.Length-3))
                     {
-                        String message = "write_midiinfo";
+                        com.Write("write_midiinfo" + form.Text);
+                        Thread.Sleep(sleepTime);
+                        com.Write((form.Controls.Count+1).ToString());
+                        Thread.Sleep(sleepTime);
+                        com.Write(channel.ToString());
+                        Thread.Sleep(sleepTime);
                         foreach (Control ctrl in form.Controls)
                         {
-                            message=message+ctrl.Name+"&"+ctrl.Text+"_";
-                        }com.Write(message);
+                            com.Write(ctrl.Name+"_"+ctrl.Text);
+                            Thread.Sleep(sleepTime);
+                        }
                     }
                 }
         }
@@ -673,28 +707,47 @@ namespace PorMIDITool
         {
             if (com.IsOpen)
             {
-                com.Write("");String message = "write_midiinfoA1"+channel.ToString()+"_";
-                for (int i = 0; i < 16; i++)
+                String []message=new string[59]; message[0]=channel.ToString();//"write_midiinfoA1"
+                for (int i = 1; i < 17; i++)
                 {
-                    message = message + this.Controls["tb" + (i + 1).ToString()].Text+"_";
+                    message[i]= this.Controls["tb" + (i).ToString()].Text;
                 }
-                for (int i = 0; i < 10; i++)
+                for (int i = 17; i < 27; i++)
                 {
-                    message = message + this.Controls["addtb" + (i + 1).ToString()].Text + "_";
+                    message[i] = this.Controls["addtb" + (i -16).ToString()].Text;
                 }
-                for (int i = 0; i < 16; i++)
+                for (int i = 27; i < 43; i++)
                 {
                     try
                     {
-                        String[] colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[i + 1].Split(' ');
-                        message = message + colset[0]+"_"+colset[1]+"_";
+                        String[] colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[i -26].Split(' ');
+                        message[27 + (i - 27) * 2] = colset[0]; message[27 + (i - 27) * 2 + 1]= colset[1];
                     }
                     catch (Exception) {
-                        message = message + "2_0_";
+                        message[27 + (i - 27) * 2] = "2"; message[27 + (i - 27) * 2 + 1]="0";
                     }
                 }
-                com.Write(message);
+                com.Write("write_midiinfoA1");
+                Thread.Sleep(sleepTime);
+                for (int i = 0; i < 15; i++)
+                {
+                    String messageStr="";
+                    for (int j = 0; j < 4; j++)
+                        if (!((i == 14) && (j == 3))) messageStr = messageStr + message[i * 4 + j] + "_";
+                        com.Write(messageStr);
+                    Thread.Sleep(sleepTime);
+                }
+                
             }
+        }
+        public void Form1Closed(object sender, FormClosingEventArgs e)
+        {
+            formClosing = true;
+        }
+
+        private void загрузитьВМодульToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
