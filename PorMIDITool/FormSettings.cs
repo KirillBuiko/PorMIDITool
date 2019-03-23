@@ -108,9 +108,6 @@ namespace PorMIDITool
             catch (Exception) { }
             return;
         }
-            
-        
-
         private void button1_Click(object sender, EventArgs e)
         {
             if (comboBox1.Items.Count != 0) open = true;

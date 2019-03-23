@@ -400,7 +400,6 @@ namespace PorMIDITool
                                         break;
                                     }
                                 }
-                                
                             }
                             if (flag)
                             {
@@ -408,15 +407,11 @@ namespace PorMIDITool
                                 {
                                     //MessageBox.Show(rbuf[2].ToCharArray()[2].ToString());
                                     if (rbuf[3] == ("on" + '\r'))
-                                    {
                                         midi_Send(note, "9", 127);
-                                    }
                                     else midi_Send(note, "9", 0);
                                 }
                                 if (rbuf[1] == "cc")
-                                {
                                     midi_Send(note, "B", Convert.ToInt32(rbuf[3].Substring(0, rbuf[3].Length - 1)));
-                                }
                             }
                         }
                     }
@@ -709,17 +704,12 @@ namespace PorMIDITool
             {
                 String []message=new string[59]; message[0]=channel.ToString();//"write_midiinfoA1"
                 for (int i = 1; i < 17; i++)
-                {
                     message[i]= this.Controls["tb" + (i).ToString()].Text;
-                }
                 for (int i = 17; i < 27; i++)
-                {
                     message[i] = this.Controls["addtb" + (i -16).ToString()].Text;
-                }
                 for (int i = 27; i < 43; i++)
                 {
-                    try
-                    {
+                    try{
                         String[] colset = File.ReadAllLines("c:\\ProgramData\\PorMIDITool\\profiles\\profile" + profile + ".pmt")[i -26].Split(' ');
                         message[27 + (i - 27) * 2] = colset[0]; message[27 + (i - 27) * 2 + 1]= colset[1];
                     }
